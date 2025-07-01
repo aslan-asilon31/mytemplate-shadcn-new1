@@ -42,12 +42,13 @@ class PermissionController extends Controller implements HasMiddleware
 
     public function create()
     {
-        $groups = PermissionGroup::select('id', 'name')->orderBy('name')->get();
+        $availablePermissions = Permission::pluck('name'); // ['permissions-index', 'permissions-create', etc]
 
         return inertia('permissions/create', [
-            'groups' => $groups,
+            'available_permissions' => $availablePermissions,
         ]);
     }
+
 
 
     public function edit(Permission $permission)
@@ -60,16 +61,24 @@ class PermissionController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
-        dd($request);
         $validated = $request->validate([
-            'name' => 'required|unique:permissions,name|min:3|max:255',
-            'permission_group_id' => 'required|exists:permission_groups,id',
+            'group_name' => 'required|min:3|max:255|unique:permission_groups,name',
+            'permissions' => 'required|array|min:1',
+            'permissions.*' => 'exists:permissions,name',
         ]);
 
-        Permission::create($validated);
+        $group = PermissionGroup::create([
+            'name' => $validated['group_name'],
+        ]);
+
+        foreach ($validated['permissions'] as $permName) {
+            $permission = Permission::where('name', $permName)->first();
+            $permission->update(['permission_group_id' => $group->id]);
+        }
 
         return to_route('permissions.index');
     }
+
 
     public function update(Request $request, Permission $permission)
     {

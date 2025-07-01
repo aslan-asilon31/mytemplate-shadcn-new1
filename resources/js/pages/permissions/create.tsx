@@ -5,21 +5,20 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import Input from '@/components/input';
-import Select from '@/components/select2'; // Custom select komponen
 import Swal from 'sweetalert2';
 import { Card } from "@/components/ui/card";
 
 export default function Create() {
-  const { groups = [] } = usePage().props; // Default value: []
+  const { available_permissions = [] } = usePage().props; // dikirim dari controller
 
   const { data, setData, post, processing, errors } = useForm({
-    name: '',
-    permission_group_id: '',
+    group_name: '',
+    permissions: [],
   });
 
   const breadcrumbs: BreadcrumbItem[] = [
     {
-      title: `Permission > Create`,
+      title: `Permission > Create Group`,
       href: '/permissions/create',
     },
   ];
@@ -31,7 +30,7 @@ export default function Create() {
       onSuccess: () => {
         Swal.fire({
           title: 'Success!',
-          text: 'Permission created successfully!',
+          text: 'Permission group created successfully!',
           icon: 'success',
           showConfirmButton: false,
           timer: 1500,
@@ -40,45 +39,55 @@ export default function Create() {
     });
   };
 
+  const togglePermission = (perm: string) => {
+    setData('permissions', data.permissions.includes(perm)
+      ? data.permissions.filter(p => p !== perm)
+      : [...data.permissions, perm]
+    );
+  };
+
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Permission Create" />
+      <Head title="Create Permission Group" />
       <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
         <Card>
           <Container>
             <form onSubmit={handleStoreData}>
-              {/* Nama Permission */}
+              {/* Nama Group */}
               <div className="mb-4">
                 <Input
-                  label="Permission Name"
+                  label="Group Name"
                   type="text"
-                  value={data.name}
-                  onChange={(e) => setData('name', e.target.value)}
-                  errors={errors.name}
-                  placeholder="Input permission name..."
+                  value={data.group_name}
+                  onChange={(e) => setData('group_name', e.target.value)}
+                  errors={errors.group_name}
+                  placeholder="Input group name..."
                 />
               </div>
 
-              {/* Group Dropdown */}
+              {/* Checkbox Permissions */}
               <div className="mb-4">
-                <Select
-                  label="Permission Group"
-                  value={data.permission_group_id}
-                  onChange={(e) => setData('permission_group_id', e.target.value)}
-                  options={groups.map((group) => ({
-                    label: group.name,
-                    value: group.id,
-                  }))}
-                  placeholder="Select group"
-                  errors={errors.permission_group_id}
-                />
+                <label className="block mb-2 font-medium">Assign Permissions</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {available_permissions.map((perm: string) => (
+                    <label key={perm} className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={data.permissions.includes(perm)}
+                        onChange={() => togglePermission(perm)}
+                      />
+                      <span>{perm}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.permissions && (
+                  <div className="text-sm text-red-600 mt-1">{errors.permissions}</div>
+                )}
               </div>
 
-              {/* Action Button */}
+              {/* Button */}
               <div className="flex items-center gap-2">
-                <Button type="submit" disabled={processing}>
-                  Save
-                </Button>
+                <Button type="submit" disabled={processing}>Save</Button>
                 <Button type="cancel" url={route('permissions.index')} />
               </div>
             </form>
