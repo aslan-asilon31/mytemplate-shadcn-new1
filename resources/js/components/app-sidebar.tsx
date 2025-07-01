@@ -153,9 +153,9 @@ export function AppSidebar() {
       <SidebarGroupContent>
         <SidebarGroupLabel>Management Pengguna</SidebarGroupLabel>
         <SidebarMenu>
-          <SidebarMenuItem className={isActiveMenu("/dashboard", url) ? 'active' : ''} >
+          <SidebarMenuItem className={isActiveMenu("/permissions", url) ? 'active' : ''} >
             <SidebarMenuButton asChild>
-              <Link href="/dashboard">
+              <Link href="/permissions">
                 <ShieldCheck className="mr-2" />
                 Akses Group
               </Link>

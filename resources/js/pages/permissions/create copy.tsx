@@ -53,7 +53,7 @@ export default function Create() {
         <Card>
           <Container>
             <form onSubmit={handleStoreData}>
-              {/* Group Name */}
+              {/* Nama Group */}
               <div className="mb-4">
                 <Input
                   label="Group Name"
@@ -65,26 +65,19 @@ export default function Create() {
                 />
               </div>
 
-              {/* Permission Groups */}
+              {/* Checkbox Permissions */}
               <div className="mb-4">
                 <label className="block mb-2 font-medium">Assign Permissions</label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {/* Loop through each permission group */}
-                  {Object.keys(available_permissions).map((groupName) => (
-                    <div key={groupName}>
-                      <h3 className="font-semibold text-lg">{groupName}</h3>
-                      {/* Loop through each permission in the group */}
-                      {available_permissions[groupName].map((perm: string) => (
-                        <label key={perm} className="inline-flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={data.permissions.includes(perm)}
-                            onChange={() => togglePermission(perm)}
-                          />
-                          <span>{perm}</span>
-                        </label>
-                      ))}
-                    </div>
+                  {available_permissions.map((perm: string) => (
+                    <label key={perm} className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={data.permissions.includes(perm)}
+                        onChange={() => togglePermission(perm)}
+                      />
+                      <span>{perm}</span>
+                    </label>
                   ))}
                 </div>
                 {errors.permissions && (
