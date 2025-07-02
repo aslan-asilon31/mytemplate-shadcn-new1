@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('permission_groups', function (Blueprint $table) {
+        Schema::create('group_roles', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->foreignId('group_id')->constrained()->onDelete('cascade');
+            $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('posts');
+        Schema::dropIfExists('group_roles');
     }
 };

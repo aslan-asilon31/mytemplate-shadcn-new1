@@ -58,7 +58,6 @@ class PostController extends Controller
         $post->update($request->only(['title', 'content']));
 
         return Inertia::location(route('posts.index'));
-        // return redirect()->route('posts.index');
     }
 
     public function destroy(Post $post)

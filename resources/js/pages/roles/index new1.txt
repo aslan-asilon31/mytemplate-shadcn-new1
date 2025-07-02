@@ -2,12 +2,13 @@ import React from 'react';
 import Container from '@/components/container';
 import Table from '@/components/table';
 import Button from '@/components/button';
+import Pagination from '@/components/pagination';
 import Search from '@/components/search';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { usePage, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import Pagination from '@/components/pagination';
 import {
   Card,
   CardHeader,
@@ -15,22 +16,33 @@ import {
 } from "@/components/ui/card";
 import Swal from 'sweetalert2';
 
+
 export default function Index() {
-  const { auth, permissions, filters } = usePage().props;
+  const { auth, groups, filters } = usePage().props;
   const user = auth?.user;
+  let rowIndex = 0;
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Permission', href: '/permissions' },
+    {
+      title: `Role`,
+      href: '/roles',
+    },
   ];
+
+  const groupedPermissions = groups.data.map(group => ({
+    groupId : group.id,
+    groupName: group.name,
+    permissions: group.permissions,
+  }));
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={`Permissions ${user?.name ?? ''}`} />
+      <Head title={`Permission ${user ? user.name : "User"}`} />
       <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
         <div className="grid auto-rows-min gap-4 md:grid-cols-1">
           <Card>
             <CardHeader>
-              <CardTitle>Selamat Datang {user?.name ?? 'User'}</CardTitle>
+              <CardTitle>Selamat Datang {user ? user.name : "User"}</CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -38,9 +50,9 @@ export default function Index() {
         <Card>
           <Container>
             <div className='mb-4 flex items-center justify-between gap-4'>
-              <Button type={'add'} url={route('permissions.create')} />
+                <Button type={'add'} url={route('roles.create')} />
               <div className='w-full md:w-4/6'>
-                <Search url={route('permissions.index')} placeholder={'Search permission name...'} filter={filters} />
+                <Search url={route('roles.index')} placeholder={'Search permissions-data by name...'} filter={filters} />
               </div>
             </div>
 
@@ -49,23 +61,40 @@ export default function Index() {
                 <Table.Thead>
                   <tr>
                     <Table.Th>No</Table.Th>
-                    <Table.Th>Nama Permission</Table.Th>
+                    <Table.Th>Nama Hak Akses</Table.Th>
+                    <Table.Th>Hak Akses</Table.Th>
                     <Table.Th>Aksi</Table.Th>
                   </tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {permissions.data.map((permission: any, index: number) => (
-                    <tr key={permission.id}>
-                      <Table.Td>{(permissions.current_page - 1) * permissions.per_page + index + 1}</Table.Td>
-                      <Table.Td>{permission.name}</Table.Td>
-                        <Table.Td className="relative">
+                  {groupedPermissions.map((group, index) => (
+                    <tr key={group.groupId}>
+                      {/* No */}
+                      <Table.Td>{index + 1}</Table.Td>
+
+                      {/* Nama Hak Akses (Nama Group) */}
+                      <Table.Td>{group.groupName}</Table.Td>
+
+                      {/* Semua permission di dalam satu baris */}
+                      <Table.Td className="space-x-2">
+                        {group.permissions.map((permission, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block bg-red-100 text-red-700 text-xs font-medium px-2 py-1 rounded-full"
+                          >
+                            {permission.name}
+                          </span>
+                        ))}
+                      </Table.Td>
+
+                      <Table.Td className="relative">
                           <div className="relative inline-block text-left">
                             <button
                               type="button"
                               className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                               onClick={() =>
                                 document
-                                  .getElementById(`dropdown-${permission.id}`)
+                                  .getElementById(`dropdown-${group.groupId}`)
                                   ?.classList.toggle('hidden')
                               }
                             >
@@ -86,14 +115,14 @@ export default function Index() {
                             </button>
 
                             <div
-                              id={`dropdown-${permission.id}`}
+                              id={`dropdown-${group.groupId}`}
                               className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
                             >
                               <div className="py-1 text-sm text-gray-700">
                                 {/* Tombol Edit */}
                                 <button
                                   onClick={() =>
-                                    router.visit(route('permissions.edit', { permission: permission.id }))
+                                    router.visit(route('roles.edit.byGroup', { id: group.groupId }))
                                   }
                                   className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                                 >
@@ -105,18 +134,18 @@ export default function Index() {
                                   onClick={() => {
                                     Swal.fire({
                                       title: 'Are you sure?',
-                                      text: 'This permission will be deleted permanently.',
+                                      text: 'This user will be deleted permanently.',
                                       icon: 'warning',
                                       showCancelButton: true,
                                       confirmButtonText: 'Yes, delete it!',
                                       cancelButtonText: 'Cancel',
                                     }).then((result) => {
                                       if (result.isConfirmed) {
-                                        router.delete(route('permissions.destroy', { permission: permission.id }), {
+                                        router.delete(route('roles.destroyGroup', { id: group.groupId }), {
                                           onSuccess: () => {
                                             Swal.fire({
                                               title: 'Deleted!',
-                                              text: 'Permission deleted successfully.',
+                                              text: 'User deleted successfully.',
                                               icon: 'success',
                                               showConfirmButton: false,
                                               timer: 1500,
@@ -125,7 +154,7 @@ export default function Index() {
                                           onError: () => {
                                             Swal.fire({
                                               title: 'Error!',
-                                              text: 'Failed to delete the permission.',
+                                              text: 'Failed to delete the role.',
                                               icon: 'error',
                                             });
                                           },
@@ -141,15 +170,16 @@ export default function Index() {
 
                             </div>
                           </div>
-                        </Table.Td>
+                      </Table.Td>
+                      
                     </tr>
                   ))}
                 </Table.Tbody>
+
               </Table>
             </Table.Card>
 
-            <div className='mt-4'>
-              {permissions?.links && <Pagination links={permissions.links} />}
+            <div className='flex items-center justify-center'>
             </div>
           </Container>
         </Card>

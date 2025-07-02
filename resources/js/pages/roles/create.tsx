@@ -1,142 +1,106 @@
+import React from 'react';
 import Container from '@/components/container';
 import Button from '@/components/button';
 import AppLayout from '@/layouts/app-layout';
-import { usePage, Head ,useForm} from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import Input from '@/components/input';
-import Checkbox from "@/components/checkbox";
 import Swal from 'sweetalert2';
-import {
-  Card,
-} from "@/components/ui/card"
-import React from 'react';
-import { LoaderCircle } from "lucide-react";
+import { Card } from '@/components/ui/card';
 
 export default function Create() {
+  const { available_permissions = {} } = usePage().props; // data sudah dalam bentuk group
 
-    const { permissions } = usePage<{ permissions: Record<string, string[]> }>().props;
+  const { data, setData, post, processing, errors } = useForm({
+    group_name: '',
+    permissions: [],
+  });
 
-    // define state with helper inertia
-    const { data, setData, post, errors, processing } = useForm<{
-        name: string;
-        selectedPermissions: string[];
-    }>({
-        name: "",
-        selectedPermissions: [],
-    });
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: `Roles > Create`,
-            href: route('roles.create'),
-        },
-    ];
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: `Permission > Create Group`,
+      href: '/permissions/create',
+    },
+  ];
 
-    // define method handleUpdateData
-    const handleSelectedPermissions = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        let items = [...data.selectedPermissions];
+  const handleStoreData = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-        if (e.target.checked) {
-            if (!items.includes(value)) {
-                items.push(value);
-            }
-        } else {
-            items = items.filter((item) => item !== value);
-        }
-
-        setData("selectedPermissions", items);
-    };
-
-    // define method handleStoreData
-    const handleStoreData = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        post(route("roles.store"), {
-            onSuccess: () => {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Data created successfully!",
-                    icon: "success",
-                    showConfirmButton: false,
-                    timer: 1500,
-                });
-            },
+    post(route('permissions.store'), {
+      onSuccess: () => {
+        Swal.fire({
+          title: 'Success!',
+          text: 'Permission group created successfully!',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1500,
         });
-    };
+      },
+    });
+  };
 
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Permission Create`} />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-
-                    {/* <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div> */}
-                </div>
-            <Card>
-                <Container>
-                    <form onSubmit={handleStoreData}>
-                        <div className="mb-4">
-                            <Input
-                                label={"Role Name"}
-                                type={"text"}
-                                value={data.name}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    setData("name", e.target.value)
-                                }
-                                errors={errors.name}
-                                placeholder="Input role name.."
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                {Object.entries(permissions).map(
-                                    ([group, permissionItems], i) => (
-                                        <div
-                                            key={i}
-                                            className="p-4 bg-white rounded-lg shadow-md"
-                                        >
-                                            <h3 className="font-bold text-lg mb-2">
-                                                {group}
-                                            </h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(permissionItems as string[]).map(
-                                                    (permission: string) => (
-                                                        <Checkbox
-                                                            label={permission}
-                                                            value={permission}
-                                                            onChange={
-                                                                handleSelectedPermissions
-                                                            }
-                                                            key={permission}
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
-                                            {errors?.selectedPermissions && (
-                                                <div className="text-xs text-red-500 mt-4">
-                                                    {errors.selectedPermissions}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button type="submit" disabled={processing} className="btn btn-primary" url="">
-                                {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}Simpan
-                            </Button>
-                            <Button type="button" url={route("roles.index") || ''} className="btn btn-secondary">Batal</Button>
-                        </div>
-                    </form>
-            </Container>
-            </Card>
-            </div>
-        </AppLayout>
+  const togglePermission = (perm: string) => {
+    setData('permissions', data.permissions.includes(perm)
+      ? data.permissions.filter(p => p !== perm)
+      : [...data.permissions, perm]
     );
+  };
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Create Permission Group" />
+      <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+        <Card>
+          <Container>
+            <form onSubmit={handleStoreData}>
+              {/* Nama Group */}
+              <div className="mb-6">
+                <Input
+                  label="Group Name"
+                  type="text"
+                  value={data.group_name}
+                  onChange={(e) => setData('group_name', e.target.value)}
+                  errors={errors.group_name}
+                  placeholder="Input group name..."
+                />
+              </div>
+
+              {/* Permission per Group */}
+              <div className="space-y-4">
+                <label className="block font-medium text-lg mb-2">Assign Permissions</label>
+
+                {Object.entries(available_permissions).map(([group, perms]) => (
+                  <Card key={group} className="p-4 border border-gray-200 shadow-sm rounded-xl">
+                    <h3 className="font-semibold text-base mb-3 text-indigo-700">{group}</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {perms.map((perm: string) => (
+                        <label key={perm} className="inline-flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={data.permissions.includes(perm)}
+                            onChange={() => togglePermission(perm)}
+                          />
+                          <span>{perm}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+
+                {errors.permissions && (
+                  <div className="text-sm text-red-600 mt-1">{errors.permissions}</div>
+                )}
+              </div>
+
+              {/* Tombol Aksi */}
+              <div className="flex items-center gap-2 mt-6">
+                <Button type="submit" disabled={processing}>Save</Button>
+                <Button type="cancel" url={route('permissions.index')} />
+              </div>
+            </form>
+          </Container>
+        </Card>
+      </div>
+    </AppLayout>
+  );
 }

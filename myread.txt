@@ -1,1 +1,37 @@
 DB_DATABASE=laravel_shadcn1
+====================================
+
+===================\\\\
+groups ➝ punya banyak permission_groups
+
+groups ⇄ roles via group_roles
+
+permission_groups ➝ belongs to groups
+
+permission_groups ➝ belongs to permissions
+
+======================================
+
+Buat Fungsi permissionGroups() di Model Role
+Di model Role, kamu bisa tambahkan:
+
+--------masukan method di model roles
+use Spatie\Permission\Models\Role;
+
+    public function permissionGroups()
+    {
+        return \App\Models\PermissionGroup::whereHas('permissions', function ($q) {
+            $q->whereIn('id', $this->permissions->pluck('id'));
+        });
+    }
+
+    public function assignPermissionGroupToRole($roleName, $groupNames = [])
+{
+    $role = Role::firstOrCreate(['name' => $roleName]);
+
+    $permissions = Permission::whereHas('group', function ($q) use ($groupNames) {
+        $q->whereIn('name', $groupNames);
+    })->get();
+
+    $role->syncPermissions($permissions);
+}

@@ -1,63 +1,55 @@
+// resources/js/Pages/users/index.tsx
+
 import React from 'react';
+import { usePage, router } from '@inertiajs/react';
 import Container from '@/components/container';
 import Table from '@/components/table';
 import Button from '@/components/button';
 import Search from '@/components/search';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { usePage, Head } from '@inertiajs/react';
-import { router } from '@inertiajs/react';
-import Pagination from '@/components/pagination';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import Swal from 'sweetalert2';
 
 export default function Index() {
-  const { auth, permissions, filters } = usePage().props;
+  const { users, filters, auth } = usePage().props;
   const user = auth?.user;
 
-  const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Permission', href: '/permissions' },
-  ];
-
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={`Permissions ${user?.name ?? ''}`} />
+    <AppLayout breadcrumbs={[{ title: 'Users', href: '/users' }]}> 
       <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Selamat Datang {user?.name ?? 'User'}</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome {user?.name ?? 'User'}</CardTitle>
+          </CardHeader>
+        </Card>
 
         <Card>
           <Container>
             <div className='mb-4 flex items-center justify-between gap-4'>
-              <Button type={'add'} url={route('permissions.create')} />
+              <Button type={'add'} url={route('users.create')} />
               <div className='w-full md:w-4/6'>
-                <Search url={route('permissions.index')} placeholder={'Search permission name...'} filter={filters} />
+                <Search url={route('users.index')} placeholder={'Search users...'} filter={filters} />
               </div>
             </div>
 
-            <Table.Card title={`Permission List`}>
+            <Table.Card title={`User List`}>
               <Table>
                 <Table.Thead>
                   <tr>
                     <Table.Th>No</Table.Th>
-                    <Table.Th>Nama Permission</Table.Th>
-                    <Table.Th>Aksi</Table.Th>
+                    <Table.Th>Name</Table.Th>
+                    <Table.Th>Email</Table.Th>
+                    <Table.Th>Role</Table.Th>
+                    <Table.Th>Actions</Table.Th>
                   </tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {permissions.data.map((permission: any, index: number) => (
-                    <tr key={permission.id}>
-                      <Table.Td>{(permissions.current_page - 1) * permissions.per_page + index + 1}</Table.Td>
-                      <Table.Td>{permission.name}</Table.Td>
+                  {users.data.map((user: any, index: number) => (
+                    <tr key={user.id}>
+                      <Table.Td>{index + 1}</Table.Td>
+                      <Table.Td>{user.name}</Table.Td>
+                      <Table.Td>{user.email}</Table.Td>
+                      <Table.Td>{user.roles[0]?.name ?? '-'}</Table.Td>
                         <Table.Td className="relative">
                           <div className="relative inline-block text-left">
                             <button
@@ -65,7 +57,7 @@ export default function Index() {
                               className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                               onClick={() =>
                                 document
-                                  .getElementById(`dropdown-${permission.id}`)
+                                  .getElementById(`dropdown-${user.id}`)
                                   ?.classList.toggle('hidden')
                               }
                             >
@@ -86,14 +78,14 @@ export default function Index() {
                             </button>
 
                             <div
-                              id={`dropdown-${permission.id}`}
+                              id={`dropdown-${user.id}`}
                               className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
                             >
                               <div className="py-1 text-sm text-gray-700">
                                 {/* Tombol Edit */}
                                 <button
                                   onClick={() =>
-                                    router.visit(route('permissions.edit', { permission: permission.id }))
+                                    router.visit(route('users.edit', { id: user.id }))
                                   }
                                   className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                                 >
@@ -105,18 +97,18 @@ export default function Index() {
                                   onClick={() => {
                                     Swal.fire({
                                       title: 'Are you sure?',
-                                      text: 'This permission will be deleted permanently.',
+                                      text: 'This user will be deleted permanently.',
                                       icon: 'warning',
                                       showCancelButton: true,
                                       confirmButtonText: 'Yes, delete it!',
                                       cancelButtonText: 'Cancel',
                                     }).then((result) => {
                                       if (result.isConfirmed) {
-                                        router.delete(route('permissions.destroy', { permission: permission.id }), {
+                                        router.delete(route('users.destroy', { id: user.id }), {
                                           onSuccess: () => {
                                             Swal.fire({
                                               title: 'Deleted!',
-                                              text: 'Permission deleted successfully.',
+                                              text: 'User deleted successfully.',
                                               icon: 'success',
                                               showConfirmButton: false,
                                               timer: 1500,
@@ -125,7 +117,7 @@ export default function Index() {
                                           onError: () => {
                                             Swal.fire({
                                               title: 'Error!',
-                                              text: 'Failed to delete the permission.',
+                                              text: 'Failed to delete the User.',
                                               icon: 'error',
                                             });
                                           },
@@ -147,10 +139,6 @@ export default function Index() {
                 </Table.Tbody>
               </Table>
             </Table.Card>
-
-            <div className='mt-4'>
-              {permissions?.links && <Pagination links={permissions.links} />}
-            </div>
           </Container>
         </Card>
       </div>

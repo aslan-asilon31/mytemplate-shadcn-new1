@@ -2,53 +2,26 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\Group;
 use App\Models\PermissionGroup;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Group Permissions
+        // Step 1: Buat Groups dan isi pivot permission_groups
         $groupedPermissions = [
-            'Users' => [
-                'users-data',
-                'users-create',
-                'users-update',
-                'users-delete',
-                'users-show',
-            ],
-            'Units' => [
-                'units-data',
-                'units-create',
-                'units-update',
-                'units-delete',
-            ],
-            'Suppliers' => [
-                'suppliers-data',
-                'suppliers-create',
-                'suppliers-update',
-                'suppliers-delete',
-            ],
-            'Stocks' => [
-                'stocks-data',
-                'stocks-create',
-            ],
-            'Sales' => [
-                'sales-data',
-                'sales-create',
-                'sales-show',
-            ],
-            'Roles' => [
-                'roles-data',
-                'roles-create',
-                'roles-update',
-                'roles-delete',
-            ],
+            'Users' => ['users-data', 'users-create', 'users-update', 'users-delete', 'users-show'],
+            'Units' => ['units-data', 'units-create', 'units-update', 'units-delete'],
+            'Suppliers' => ['suppliers-data', 'suppliers-create', 'suppliers-update', 'suppliers-delete'],
+            'Stocks' => ['stocks-data', 'stocks-create'],
+            'Sales' => ['sales-data', 'sales-create', 'sales-show'],
+            'Roles' => ['roles-data', 'roles-create', 'roles-update', 'roles-delete'],
             'Reports' => [
                 'report-card-stocks',
                 'report-stocks',
@@ -66,90 +39,50 @@ class RolePermissionSeeder extends Seeder
             ],
         ];
 
-        // Insert Permission Groups & Permissions
-        foreach ($groupedPermissions as $groupName => $permissions) {
-            $group = PermissionGroup::firstOrCreate(['name' => $groupName]);
+        foreach ($groupedPermissions as $groupName => $permissionNames) {
+            $group = Group::firstOrCreate(['name' => $groupName]);
 
-            foreach ($permissions as $permissionName) {
-                Permission::firstOrCreate([
+            foreach ($permissionNames as $permissionName) {
+                // Create permission jika belum ada
+                $permission = Permission::firstOrCreate([
                     'name' => $permissionName,
                     'guard_name' => 'web',
-                ], [
-                    'permission_group_id' => $group->id
-                ])->update([
-                    'permission_group_id' => $group->id // ensure it's updated
+                ]);
+
+                // Isi table pivot permission_groups
+                PermissionGroup::firstOrCreate([
+                    'group_id' => $group->id,
+                    'permission_id' => $permission->id,
                 ]);
             }
         }
 
-        // Define Role => Permissions
-        $rolesWithPermissions = [
-            'users-data-show' => [
-                'users-data',
-                'users-show',
-            ],
-            'users-full-access' => [
-                'users-data',
-                'users-create',
-                'users-update',
-                'users-delete',
-                'users-show',
-            ],
-            'units-full-access' => [
-                'units-data',
-                'units-create',
-                'units-update',
-                'units-delete',
-            ],
-            'suppliers-full-access' => [
-                'suppliers-data',
-                'suppliers-create',
-                'suppliers-update',
-                'suppliers-delete',
-            ],
-            'stocks-full-access' => [
-                'stocks-data',
-                'stocks-create',
-            ],
-            'sales-full-access' => [
-                'sales-data',
-                'sales-create',
-                'sales-show',
-            ],
-            'roles-full-access' => [
-                'roles-data',
-                'roles-create',
-                'roles-update',
-                'roles-delete',
-            ],
-            'reports-full-access' => [
-                'report-card-stocks',
-                'report-stocks',
-                'report-orders',
-                'report-pending-order-receives',
-                'report-sales',
-                'report-best-selling-products',
-            ],
-            'product-variants-show' => [
-                'product-variants-data',
-                'product-variants-show',
-            ],
-            'product-variants-full-access' => [
-                'product-variants-data',
-                'product-variants-create',
-                'product-variants-update',
-                'product-variants-delete',
-                'product-variants-show',
-            ],
+        // Step 2: Assign group ke role via table group_roles
+        $roleGroupMap = [
+            'admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants'],
+            'super-admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants'],
+            'customer' => ['Sales', 'Product Variants'],
         ];
 
-        // Create Roles and Assign Permissions
-        foreach ($rolesWithPermissions as $roleName => $permissionNames) {
+        foreach ($roleGroupMap as $roleName => $groupNames) {
             $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
-            $role->syncPermissions($permissionNames);
+
+            foreach ($groupNames as $groupName) {
+                $group = Group::where('name', $groupName)->first();
+                if ($group) {
+                    $group->roles()->syncWithoutDetaching([$role->id]);
+                }
+            }
+
+            // Assign semua permission dari grup-grup tersebut ke role
+            $permissions = Permission::whereHas('groups', function ($q) use ($groupNames) {
+                $q->whereIn('groups.name', $groupNames);
+            })->get();
+
+            $role->syncPermissions($permissions);
         }
 
-        // Create admin user & assign all permissions
+        // Step 3: Buat user admin default
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
@@ -158,8 +91,6 @@ class RolePermissionSeeder extends Seeder
             ]
         );
 
-        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $adminRole->syncPermissions(Permission::all());
-        $adminUser->assignRole($adminRole);
+        $adminUser->assignRole('admin');
     }
 }

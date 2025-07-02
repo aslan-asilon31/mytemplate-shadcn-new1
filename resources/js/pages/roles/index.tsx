@@ -4,90 +4,193 @@ import Table from '@/components/table';
 import Button from '@/components/button';
 import Pagination from '@/components/pagination';
 import Search from '@/components/search';
-import useHasAnyPermission from '@/utils/permission';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { usePage, Head } from '@inertiajs/react';
+import { usePage, Head, router } from '@inertiajs/react';
 import {
   Card,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card';
+import Swal from 'sweetalert2';
+
 export default function Index() {
-    const { auth } = usePage().props;
-    const { roles,filters } = usePage().props;
-    const user = auth?.user;
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: `Roles`,
-            href: '/dashboard/roles',
-        },
-    ];
-  
-    return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Permission ${user ? user.name : "User"}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle> Selamat Datang {user ? user.name : "User"}</CardTitle>
-                        </CardHeader>
-                       
-                       
-                    </Card>
-                    {/* <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div> */}
-                </div>
-                <Card>
-                    <Container>
-                        <div className='mb-4 flex items-center justify-between gap-4'>
-                            {useHasAnyPermission(['roles create']) &&
-                                <Button type={'add'} url={route('roles.create')}/>
-                            }
-                            <div className='w-full md:w-4/6'>
-                                <Search url={route('roles.index')} placeholder={'Search Roles data by name...'} filter={filters}/>
-                            </div>
-                        </div>
-                        <Table.Card title={'Role'}>
-                            <Table>
-                                <Table.Thead>
-                                    <tr>
-                                        <Table.Th>#</Table.Th>
-                                        <Table.Th>Role Name</Table.Th>
-                                        <Table.Th>Action</Table.Th>
-                                    </tr>
-                                </Table.Thead>
-                                <Table.Tbody>
-                                    {roles.data.map((role, i) => (
-                                        <tr key={i}>
-                                            <Table.Td>{++i + (roles.current_page-1) * roles.per_page}</Table.Td>
-                                            <Table.Td>{role.name}</Table.Td>
-                                            <Table.Td>
-                                                <div className='flex items-center gap-2'>
-                                                    {useHasAnyPermission(['permissions edit']) &&
-                                                        <Button type={'edit'} url={route('roles.edit', role.id)}/>
-                                                    }
-                                                    {useHasAnyPermission(['roles delete']) &&
-                                                        <Button type={'delete'} url={route('roles.destroy', role.id)}/>
-                                                    }
-                                                </div>
-                                            </Table.Td>
-                                        </tr>
-                                    ))}
-                                </Table.Tbody>
-                            </Table>
-                        </Table.Card>
-                        <div className='flex items-center justify-center'>
-                            {roles.last_page !== 1 && (<Pagination links={roles.links}/>)}
-                        </div>
-                    </Container>
-                </Card>
+  const { auth, groups, filters } = usePage().props;
+  const user = auth?.user;
+
+  const breadcrumbs: BreadcrumbItem[] = [
+    {
+      title: 'Role',
+      href: '/roles',
+    },
+  ];
+
+  const groupedPermissions = groups.data.map(group => ({
+    groupId: group.id,
+    groupName: group.name,
+    permissions: group.permissions,
+    roles: group.group?.roles || [],
+  }));
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title={`Permission ${user ? user.name : 'User'}`} />
+      <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+        <div className="grid auto-rows-min gap-4 md:grid-cols-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Selamat Datang {user?.name || 'User'}</CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+
+        <Card>
+          <Container>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <Button type={'add'} url={route('roles.create')} />
+              <div className="w-full md:w-4/6">
+                <Search
+                  url={route('roles.index')}
+                  placeholder={'Search permissions by name...'}
+                  filter={filters}
+                />
+              </div>
             </div>
-        </AppLayout>
-    );
+
+            <Table.Card title="Permission Group List">
+              <Table>
+                <Table.Thead>
+                  <tr>
+                    <Table.Th>No</Table.Th>
+                    <Table.Th>Nama Grup</Table.Th>
+                    <Table.Th>Hak Akses</Table.Th>
+                    <Table.Th>Role yang menggunakan</Table.Th>
+                    <Table.Th>Aksi</Table.Th>
+                  </tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {groupedPermissions.map((group, index) => (
+                    <tr key={group.groupId}>
+                      <Table.Td>{index + 1}</Table.Td>
+                      <Table.Td>{group.groupName}</Table.Td>
+                      <Table.Td className="space-x-1">
+                        {group.permissions.map((permission, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-block bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full"
+                          >
+                            {permission.name}
+                          </span>
+                        ))}
+                      </Table.Td>
+                      <Table.Td className="space-x-1">
+                        {group.roles.length > 0 ? (
+                          group.roles.map((role, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full"
+                            >
+                              {role.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-400 text-sm italic">Belum ada role</span>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            onClick={() =>
+                              document
+                                .getElementById(`dropdown-${group.groupId}`)
+                                ?.classList.toggle('hidden')
+                            }
+                          >
+                            Aksi
+                            <svg
+                              className="-mr-1 ml-2 h-5 w-5"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              aria-hidden="true"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+
+                          <div
+                            id={`dropdown-${group.groupId}`}
+                            className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
+                          >
+                            <div className="py-1 text-sm text-gray-700">
+                              <button
+                                onClick={() =>
+                                  router.visit(route('roles.edit.byGroup', { id: group.groupId }))
+                                }
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  Swal.fire({
+                                    title: 'Are you sure?',
+                                    text: 'This permission group will be deleted permanently.',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes, delete it!',
+                                    cancelButtonText: 'Cancel',
+                                  }).then((result) => {
+                                    if (result.isConfirmed) {
+                                      router.delete(route('roles.destroyGroup', { id: group.groupId }), {
+                                        onSuccess: () => {
+                                          Swal.fire({
+                                            title: 'Deleted!',
+                                            text: 'Group deleted successfully.',
+                                            icon: 'success',
+                                            showConfirmButton: false,
+                                            timer: 1500,
+                                          });
+                                        },
+                                        onError: () => {
+                                          Swal.fire({
+                                            title: 'Error!',
+                                            text: 'Failed to delete the group.',
+                                            icon: 'error',
+                                          });
+                                        },
+                                      });
+                                    }
+                                  });
+                                }}
+                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </Table.Td>
+                    </tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.Card>
+
+            <div className="flex items-center justify-center mt-4">
+             {groups?.links && (
+                <Pagination links={groups.links} />
+              )}
+            </div>
+          </Container>
+        </Card>
+      </div>
+    </AppLayout>
+  );
 }

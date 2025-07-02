@@ -16,11 +16,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    // permissions route
-    Route::resource('/permissions', PermissionController::class);
     // roles route
-    Route::resource('roles', RoleController::class)->except('show');
-    Route::resource('/posts', PostController::class);
+    Route::get('/roles/group/{id}/edit', [RoleController::class, 'edit'])->name('roles.edit.byGroup');
+    Route::delete('/roles/group/{id}', [RoleController::class, 'destroy'])->name('roles.destroyGroup');
+    Route::resource('/roles', RoleController::class);
+
+
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::get('/permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
+    Route::post('/permissions', [PermissionController::class, 'store'])->name('permissions.store');
+    Route::get('/permissions/{permission}/edit', [PermissionController::class, 'edit'])->name('permissions.edit');
+    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
+
+
+    Route::resource('users', UserController::class);
 });
 
 require __DIR__ . '/settings.php';

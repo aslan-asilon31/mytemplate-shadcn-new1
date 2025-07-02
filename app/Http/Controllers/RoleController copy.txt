@@ -11,54 +11,28 @@ use Spatie\Permission\Models\Permission;
 
 class RoleController extends Controller
 {
-
     public function index(Request $request)
     {
+        // Ambil permission_id yang cocok dengan pencarian
         $permissions = Permission::when($request->search, function ($q) use ($request) {
             $q->where('name', 'like', '%' . $request->search . '%');
-        })->pluck('id');
+        })->get();
 
-        $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
-            $q->whereIn('permission_id', $permissions);
-        })->pluck('group_id')->unique();
+        // Ambil hanya id grup dari permission tersebut
+        $groupIds = $permissions->pluck('permission_group_id')->unique()->filter();
 
-        $groups = Group::when($groupIds->isNotEmpty(), function ($q) use ($groupIds) {
-            $q->whereIn('id', $groupIds);
-        })
-            ->with(['permissions', 'roles'])
+        // Ambil semua permission group berdasarkan group_id
+        $groups = PermissionGroup::whereIn('id', $groupIds)
+            ->with(['permissions', 'roles']) // relasi 'roles' di sini harus ada di model PermissionGroup
             ->orderBy('name')
             ->paginate(10)
             ->withQueryString();
 
-        // dd($groups);
         return inertia('roles/index', [
             'groups' => $groups,
             'filters' => $request->only(['search']),
         ]);
     }
-
-
-    // public function index(Request $request)
-    // {
-    //     $permissions = Permission::when($request->search, function ($q) use ($request) {
-    //         $q->where('name', 'like', '%' . $request->search . '%');
-    //     })->pluck('id');
-
-    //     $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
-    //         $q->whereIn('permission_id', $permissions);
-    //     })->pluck('group_id')->unique();
-
-    //     $groups = Group::whereIn('id', $groupIds)
-    //         ->with(['permissions', 'roles'])
-    //         ->orderBy('name')
-    //         ->paginate(10)
-    //         ->withQueryString();
-
-    //     return inertia('roles/index', [
-    //         'groups' => $groups,
-    //         'filters' => $request->only(['search']),
-    //     ]);
-    // }
 
     public function create()
     {
@@ -80,7 +54,7 @@ class RoleController extends Controller
 
     public function edit($id)
     {
-        $group = Group::with(['permissions', 'roles'])->findOrFail($id);
+        $group = PermissionGroup::with('permissions')->findOrFail($id);
         $roles = Role::all();
 
         $allPermissions = Permission::pluck('name');
@@ -92,7 +66,8 @@ class RoleController extends Controller
             $groupedPermissions[$groupKey][] = $perm;
         }
 
-        $attachedRoles = $group->roles->pluck('id')->toArray();
+        // Ambil roles yang terhubung ke group (melalui model Group)
+        $attachedRoles = $group->group?->roles()->pluck('id') ?? [];
 
         return inertia('roles/edit', [
             'group' => $group,
@@ -102,31 +77,6 @@ class RoleController extends Controller
             'attached_roles' => $attachedRoles,
         ]);
     }
-
-    public function update(Request $request, $id)
-    {
-        $group = Group::with(['permissions', 'roles'])->findOrFail($id);
-
-        $validated = $request->validate([
-            'group_name' => 'required|min:3|max:255|unique:groups,name,' . $group->id,
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'exists:permissions,name',
-            'roles' => 'required|array|min:1',
-            'roles.*' => 'exists:roles,id',
-        ]);
-
-        DB::transaction(function () use ($validated, $group) {
-            $group->update(['name' => $validated['group_name']]);
-
-            // Sinkronisasi roles dan permissions (pivot tables)
-            $permissionIds = Permission::whereIn('name', $validated['permissions'] ?? [])->pluck('id');
-            $group->permissions()->sync($permissionIds);
-            $group->roles()->sync($validated['roles']);
-        });
-
-        return redirect()->route('roles.index')->with('success', 'Permission group updated.');
-    }
-
 
     public function store(Request $request)
     {
@@ -161,6 +111,40 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Permission group created.');
     }
 
+    public function update(Request $request, $id)
+    {
+        $group = PermissionGroup::with('permissions')->findOrFail($id);
+        $mainGroup = $group->group;
+
+        $validated = $request->validate([
+            'group_name' => 'required|min:3|max:255|unique:permission_groups,name,' . $group->id,
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,name',
+            'roles' => 'required|array|min:1',
+            'roles.*' => 'exists:roles,id',
+        ]);
+
+        DB::transaction(function () use ($validated, $group, $mainGroup) {
+            $group->update(['name' => $validated['group_name']]);
+
+            if ($mainGroup) {
+                $mainGroup->update(['name' => $validated['group_name']]);
+                $mainGroup->roles()->sync($validated['roles']);
+            }
+
+            $permissionIds = Permission::whereIn('name', $validated['permissions'] ?? [])->pluck('id');
+
+            Permission::whereIn('id', $permissionIds)->update([
+                'permission_group_id' => $group->id,
+            ]);
+
+            Permission::where('permission_group_id', $group->id)
+                ->whereNotIn('id', $permissionIds)
+                ->update(['permission_group_id' => null]);
+        });
+
+        return redirect()->route('roles.index')->with('success', 'Permission group updated.');
+    }
 
     public function destroy($id)
     {

@@ -3,133 +3,142 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Group;
+use App\Models\PermissionGroup;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
-use Illuminate\Routing\Controllers\Middleware;
+use Inertia\Inertia;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class UserController extends Controller implements HasMiddleware
 {
-
     public static function middleware()
     {
         return [
-            new Middleware('permission:users index', only: ['index']),
-            new Middleware('permission:users create', only: ['create', 'store']),
-            new Middleware('permission:users edit', only: ['edit', 'update   ']),
-            new Middleware('permission:users delete', only: ['destroy']),
+            // new Middleware('permission:users index', only: ['index']),
+            // new Middleware('permission:users create', only: ['create', 'store']),
+            // new Middleware('permission:users edit', only: ['edit', 'update']),
+            // new Middleware('permission:users delete', only: ['destroy']),
         ];
     }
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index(Request $request)
     {
-        // get all users
         $users = User::with('roles')
-            ->when(request('search'), fn($query) => $query->where('name', 'like', '%' . request('search') . '%'))
+            ->when(
+                $request->search,
+                fn($query) =>
+                $query->where('name', 'like', '%' . $request->search . '%')
+            )
             ->latest()
             ->paginate(6);
 
-        // render view
-        return inertia('users/index', ['users' => $users, 'filters' => $request->only(['search'])]);
+        return inertia('users/index', [
+            'users' => $users,
+            'filters' => $request->only(['search']),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        // get roles
-        $roles = Role::latest()->get();
-        // render view
-        return inertia('users/create', ['roles' => $roles]);
+        $roles = Role::all();
+
+        return Inertia::render('users/create', [
+            'roles' => $roles,
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // validate request
-        $request->validate([
-            'name' => 'required|min:3|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed|min:4',
-            'selectedRoles' => 'required|array|min:1',
+        dd($request);
+
+        $validated = $request->validate([
+            'name'     => 'required|string|min:3|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|min:4',
+            'role'     => 'required|string',
         ]);
 
-        // create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => bcrypt($validated['password']),
         ]);
 
-        // attach roles
-        $user->assignRole($request->selectedRoles);
+        $user->assignRole($validated['role']);
 
-        // render view
-        return to_route('users.index');
+        return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(User $user)
     {
-        // get roles
         $roles = Role::where('name', '!=', 'super-admin')->get();
 
-        // load roles
-        $user->load('roles');
+        $user->load(['roles', 'permissions']);
 
-        // render view
-        return inertia('users/edit', ['user' => $user, 'roles' => $roles]);
+        // Ambil semua permission dari role yang dimiliki user
+        $rolePermissions = $user->roles
+            ->flatMap(fn($role) => $role->permissions)
+            ->pluck('id')
+            ->unique();
+
+        // Ambil group (App\Models\Group) yang memiliki relasi dengan role yang dimiliki user
+        $rolePermissionGroups = Group::whereHas('roles', function ($query) use ($user) {
+            $query->whereIn('roles.id', $user->roles->pluck('id'));
+        })->pluck('name');
+
+        // Ambil PermissionGroup yang ada dalam group tersebut, dan filter permission-nya sesuai dengan permission yang dimiliki role
+        $groupedPermissions = Group::with(['permissions' => function ($q) use ($rolePermissions) {
+            $q->whereIn('permissions.id', $rolePermissions);
+        }])
+            ->whereHas('permissions', function ($q) use ($rolePermissions) {
+                $q->whereIn('permissions.id', $rolePermissions);
+            })
+            ->get()
+            ->map(function ($group) use ($user) {
+                return [
+                    'groupId' => $group->id,
+                    'groupName' => $group->name,
+                    'permissions' => $group->permissions->map(function ($permission) use ($user) {
+                        return [
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+                            'checked' => $user->permissions->contains('id', $permission->id),
+                        ];
+                    })->values(),
+                ];
+            });
+
+        return inertia('users/edit', [
+            'user' => $user,
+            'roles' => $roles,
+            'groupedPermissions' => $groupedPermissions,
+            'rolePermissionGroups' => $rolePermissionGroups,
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, User $user)
     {
-        // validate request
         $request->validate([
-            'name' => 'required|min:3|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'selectedRoles' => 'required|array|min:1',
+            'name'          => 'required|min:3|max:255',
+            'email'         => 'required|email|unique:users,email,' . $user->id,
+            'role' => 'required|min:1',
         ]);
 
-        // update user data
         $user->update([
-            'name' => $request->name,
+            'name'  => $request->name,
             'email' => $request->email,
         ]);
 
-        // attach roles
-        $user->syncRoles($request->selectedRoles);
+        $user->syncRoles($request->role);
 
-        // render view
-        return to_route('users.index');
+        return redirect()->route('users.index')->with('success', 'User updated.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(User $user)
     {
-        // delete user data
         $user->delete();
 
-        // render view
-        return back();
+        return back()->with('success', 'User deleted.');
     }
 }

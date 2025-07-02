@@ -153,25 +153,25 @@ export function AppSidebar() {
       <SidebarGroupContent>
         <SidebarGroupLabel>Management Pengguna</SidebarGroupLabel>
         <SidebarMenu>
-          <SidebarMenuItem className={isActiveMenu("/permissions", url) ? 'active' : ''} >
+          <SidebarMenuItem className={isActiveMenu("/roles", url) ? 'active' : ''} >
             <SidebarMenuButton asChild>
-              <Link href="/permissions">
+              <Link href="/roles">
                 <ShieldCheck className="mr-2" />
                 Akses Group
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem className={isActiveMenu("/dashboard", url) ? 'active' : ''} >
+          <SidebarMenuItem className={isActiveMenu("/permissions", url) ? 'active' : ''} >
             <SidebarMenuButton asChild>
-              <Link href="/dashboard">
+              <Link href="/permissions">
                 <KeyRound   className="mr-2" />
                 Hak Akses
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem className={isActiveMenu("/dashboard", url) ? 'active' : ''} >
+          <SidebarMenuItem className={isActiveMenu("/users", url) ? 'active' : ''} >
             <SidebarMenuButton asChild>
-              <Link href="/dashboard">
+              <Link href="/users">
                 <Users className="mr-2" />
                 Pengguna
               </Link>
