@@ -75,9 +75,13 @@ class RolePermissionSeeder extends Seeder
             }
 
             // Assign semua permission dari grup-grup tersebut ke role
-            $permissions = Permission::whereHas('groups', function ($q) use ($groupNames) {
-                $q->whereIn('groups.name', $groupNames);
+            $permissions = \Spatie\Permission\Models\Permission::whereIn('id', function ($query) use ($groupNames) {
+                $query->select('permission_id')
+                    ->from('permission_groups')
+                    ->join('groups', 'permission_groups.group_id', '=', 'groups.id')
+                    ->whereIn('groups.name', $groupNames);
             })->get();
+
 
             $role->syncPermissions($permissions);
         }
