@@ -34,41 +34,13 @@ class RoleController extends Controller
             ->with(['permissions', 'roles'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage)
-            ->withQueryString(); // Preserve the search query and perPage in the URL
+            ->withQueryString();
 
         return inertia('roles/index', [
             'groups' => $groups,
-            'filters' => $request->only(['search', 'perPage']), // Pass the filters (search & perPage) to the frontend
+            'filters' => $request->only(['search', 'perPage']),
         ]);
     }
-
-
-    // public function index(Request $request)
-    // {
-    //     $perPage = $request->input('perPage', 10);
-    //     $permissions = Permission::when($request->search, function ($q) use ($request) {
-    //         $q->where('name', 'like', '%' . $request->search . '%');
-    //     })->pluck('id');
-
-    //     $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
-    //         $q->whereIn('permission_id', $permissions);
-    //     })->pluck('group_id')->unique();
-
-    //     $groups = Group::when($groupIds->isNotEmpty(), function ($q) use ($request->search, $groupIds) {
-    //         $q->where('name', 'like', '%' . $request->search . '%')
-    //             ->orWhereIn('id', $groupIds);
-    //     })
-    //         ->with(['permissions', 'roles'])
-    //         ->orderBy('created_at', 'desc')
-    //         ->paginate($perPage)
-    //         ->withQueryString();
-
-    //     // dd($groups);
-    //     return inertia('roles/index', [
-    //         'groups' => $groups,
-    //         'filters' => $request->only(['search']),
-    //     ]);
-    // }
 
 
 
@@ -130,7 +102,6 @@ class RoleController extends Controller
         DB::transaction(function () use ($validated, $group) {
             $group->update(['name' => $validated['group_name']]);
 
-            // Sinkronisasi roles dan permissions (pivot tables)
             $permissionIds = Permission::whereIn('name', $validated['permissions'] ?? [])->pluck('id');
             $group->permissions()->sync($permissionIds);
             $group->roles()->sync($validated['roles']);

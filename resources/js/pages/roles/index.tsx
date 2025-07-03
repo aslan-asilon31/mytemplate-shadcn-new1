@@ -111,7 +111,6 @@ export default function Index() {
                     <Table.Th>No</Table.Th>
                     <Table.Th>Nama Grup</Table.Th>
                     <Table.Th>Hak Akses</Table.Th>
-                    <Table.Th>Role yang menggunakan</Table.Th>
                     <Table.Th>Aksi</Table.Th>
                   </tr>
                 </Table.Thead>
@@ -129,20 +128,6 @@ export default function Index() {
                             {permission.name}
                           </span>
                         ))}
-                      </Table.Td>
-                      <Table.Td className="space-x-1">
-                        {group.roles.length > 0 ? (
-                          group.roles.map((role, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded-full"
-                            >
-                              {role.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-gray-400 text-sm italic">Belum ada role</span>
-                        )}
                       </Table.Td>
                       <Table.Td>
                         <div className="relative inline-block text-left">
