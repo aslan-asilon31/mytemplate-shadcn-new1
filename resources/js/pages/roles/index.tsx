@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/card';
 import Swal from 'sweetalert2';
 
+
+
 export default function Index() {
   const { auth, groups, filters } = usePage().props;
   const user = auth?.user;
