@@ -20,8 +20,10 @@ class RolePermissionSeeder extends Seeder
             'Units' => ['units-data', 'units-create', 'units-update', 'units-delete'],
             'Suppliers' => ['suppliers-data', 'suppliers-create', 'suppliers-update', 'suppliers-delete'],
             'Stocks' => ['stocks-data', 'stocks-create'],
-            'Sales' => ['sales-data', 'sales-create', 'sales-show'],
+            'Sales' => ['sales-data', 'sales-create','sales-edit' , 'sales-show'],
+            'Permissions' => ['permissions-data','permissions-edit' , 'permissions-create', 'permissions-show', 'permissions-delete'],
             'Roles' => ['roles-data', 'roles-create', 'roles-update', 'roles-delete'],
+            'Jenis-arsip' => ['jenis-arsip-data', 'jenis-arsip-create', 'jenis-arsip-update', 'jenis-arsip-delete'],
             'Reports' => [
                 'report-card-stocks',
                 'report-stocks',
@@ -30,12 +32,60 @@ class RolePermissionSeeder extends Seeder
                 'report-sales',
                 'report-best-selling-products',
             ],
-            'Product Variants' => [
-                'product-variants-data',
-                'product-variants-create',
-                'product-variants-update',
-                'product-variants-delete',
-                'product-variants-show',
+            'IpAddress' => [
+                'ip-address-data', 
+                'ip-address-create', 
+                'ip-address-update', 
+                'ip-address-delete'
+            ],
+            'KonfigEmail' => [
+                'konfig-email-data', 
+                'konfig-email-create', 
+                'konfig-email-update', 
+                'konfig-email-delete'
+            ],
+            'KonfigGoogleCaptcha' => [
+                'konfig-google-captcha-data', 
+                'konfig-google-captcha-create', 
+                'konfig-google-captcha-update', 
+                'konfig-google-captcha-delete'
+            ],
+            'KonfigPaymentGateway' => [
+                'konfig-payment-gateway-data', 
+                'konfig-payment-gateway-create', 
+                'konfig-payment-gateway-update', 
+                'konfig-payment-gateway-delete'
+            ],
+            'KonfigSistem' => [
+                'konfig-sistem-data', 
+                'konfig-sistem-create', 
+                'konfig-sistem-update', 
+                'konfig-sistem-delete'
+            ],
+            'KonfigUniversitas' => [
+                'konfig-universitas-data', 
+                'konfig-universitas-create', 
+                'konfig-universitas-update', 
+                'konfig-universitas-delete'
+            ],
+            'KonfigWAGateway' => [
+                'konfig-wa-gateway-data', 
+                'konfig-wa-gateway-create', 
+                'konfig-wa-gateway-update', 
+                'konfig-wa-gateway-delete'
+            ],
+            'IdentitasUniversitas' => [
+                'identitas-universitas-data', 
+                'identitas-universitas-create', 
+                'identitas-universitas-update', 
+                'identitas-universitas-delete'
+            ],
+            'product' => [
+                'product-data',
+                'product-create',
+                'product-update',
+                'product-delete',
+                'product-show',
             ],
         ];
 
@@ -59,8 +109,8 @@ class RolePermissionSeeder extends Seeder
 
         // Step 2: Assign group ke role via table group_roles
         $roleGroupMap = [
-            'admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants'],
-            'super-admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants'],
+            'admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants','Permissions','Jenis-arsip','IpAddress','KonfigEmail','KonfigGoogleCaptcha','KonfigPaymentGateway','KonfigSistem','KonfigUniversitas','KonfigWAGateway','IdentitasUniversitas','product'],
+            'super-admin' => ['Users', 'Units', 'Suppliers', 'Stocks', 'Sales', 'Roles', 'Reports', 'Product Variants','Permissions','Jenis-arsip','IpAddress','KonfigEmail','KonfigGoogleCaptcha','KonfigPaymentGateway','KonfigSistem','KonfigUniversitas','KonfigWAGateway','IdentitasUniversitas','product'],
             'customer' => ['Sales', 'Product Variants'],
         ];
 

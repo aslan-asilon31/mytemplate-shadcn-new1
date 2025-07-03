@@ -29,7 +29,10 @@ class PermissionController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $userPermissions = \Illuminate\Support\Facades\Auth::user()->getAllPermissions()->pluck('name')->toArray();
+
         return Inertia::render('permissions/index', [
+            'userPermissions' => $userPermissions,
             'permissions' => $permissions,
             'filters' => $request->only('search'),
         ]);

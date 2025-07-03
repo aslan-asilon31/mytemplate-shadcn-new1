@@ -26,6 +26,8 @@ class RoleController extends Controller
 
     public function index(Request $request)
     {
+        $userPermissions = \Illuminate\Support\Facades\Auth::user()->getAllPermissions()->pluck('name')->toArray();
+
         $perPage = $request->input('perPage', 10);
 
         $groups = Group::when($request->search, function ($q) use ($request) {
@@ -37,12 +39,11 @@ class RoleController extends Controller
             ->withQueryString();
 
         return inertia('roles/index', [
+            'userPermissions' => $userPermissions,
             'groups' => $groups,
             'filters' => $request->only(['search', 'perPage']),
         ]);
     }
-
-
 
     public function create()
     {

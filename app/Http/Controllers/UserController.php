@@ -25,6 +25,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        $userPermissions = \Illuminate\Support\Facades\Auth::user()->getAllPermissions()->pluck('name')->toArray();
         $users = User::with('roles')
             ->when(
                 $request->search,
@@ -35,6 +36,7 @@ class UserController extends Controller
             ->paginate(6);
 
         return inertia('users/index', [
+            'userPermissions' => $userPermissions,
             'users' => $users,
             'filters' => $request->only(['search']),
         ]);

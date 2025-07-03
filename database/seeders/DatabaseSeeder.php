@@ -17,6 +17,15 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             RolePermissionSeeder::class,
             PostSeeder::class,
+            ArsipSeeder::class,
+            IpAddressSeeder::class,
+            KonfigEmailSeeder::class,
+            KonfigGoogleCaptchaSeeder::class,
+            KonfigPaymentGatewaySeeder::class,
+            KonfigSistemSeeder::class,
+            KonfigUniversitasSeeder::class,
+            KonfigWAGatewaySeeder::class,
+            IdentitasUniversitasSeeder::class,
         ]);
     }
 }
