@@ -23,30 +23,52 @@ class RoleController extends Controller
         ];
     }
 
+
     public function index(Request $request)
     {
-        $permissions = Permission::when($request->search, function ($q) use ($request) {
+        $perPage = $request->input('perPage', 10);
+
+        $groups = Group::when($request->search, function ($q) use ($request) {
             $q->where('name', 'like', '%' . $request->search . '%');
-        })->pluck('id');
-
-        $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
-            $q->whereIn('permission_id', $permissions);
-        })->pluck('group_id')->unique();
-
-        $groups = Group::when($groupIds->isNotEmpty(), function ($q) use ($groupIds) {
-            $q->whereIn('id', $groupIds);
         })
             ->with(['permissions', 'roles'])
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage)
+            ->withQueryString(); // Preserve the search query and perPage in the URL
 
-        // dd($groups);
         return inertia('roles/index', [
             'groups' => $groups,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'perPage']), // Pass the filters (search & perPage) to the frontend
         ]);
     }
+
+
+    // public function index(Request $request)
+    // {
+    //     $perPage = $request->input('perPage', 10);
+    //     $permissions = Permission::when($request->search, function ($q) use ($request) {
+    //         $q->where('name', 'like', '%' . $request->search . '%');
+    //     })->pluck('id');
+
+    //     $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
+    //         $q->whereIn('permission_id', $permissions);
+    //     })->pluck('group_id')->unique();
+
+    //     $groups = Group::when($groupIds->isNotEmpty(), function ($q) use ($request->search, $groupIds) {
+    //         $q->where('name', 'like', '%' . $request->search . '%')
+    //             ->orWhereIn('id', $groupIds);
+    //     })
+    //         ->with(['permissions', 'roles'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->paginate($perPage)
+    //         ->withQueryString();
+
+    //     // dd($groups);
+    //     return inertia('roles/index', [
+    //         'groups' => $groups,
+    //         'filters' => $request->only(['search']),
+    //     ]);
+    // }
 
 
 
@@ -117,39 +139,85 @@ class RoleController extends Controller
         return redirect()->route('roles.index')->with('success', 'Permission group updated.');
     }
 
-
     public function store(Request $request)
     {
+        // Validate the incoming request
         $validated = $request->validate([
-            'group_name' => 'required|min:3|max:255|unique:permission_groups,name',
-            'permissions' => 'required|array|min:1',
-            'permissions.*' => 'exists:permissions,name',
-            'roles' => 'required|array|min:1',
-            'roles.*' => 'exists:roles,id',
+            'group_name' => 'required|min:3|max:255|unique:groups,name', // Ensure group name is unique in the `groups` table
+            'permissions' => 'required|array|min:1', // Ensure it's an array of permissions
+            'permissions.*' => 'required|string', // Ensure each permission is a string (either ID or name)
         ]);
 
         DB::transaction(function () use ($validated) {
-            // 1. Buat Group utama
+            // 1. Create the Group (with group_name)
             $group = Group::create(['name' => $validated['group_name']]);
 
-            // 2. Assign Role ke Group (pivot)
-            $group->roles()->sync($validated['roles']);
+            // 2. Convert permissions (names to IDs if necessary) and create PermissionGroup for each
+            foreach ($validated['permissions'] as $perm) {
+                // Check if $perm is a valid permission ID or a permission name
+                $permission = null;
 
-            // 3. Buat PermissionGroup untuk setiap permission dan hubungkan ke Group
-            $permissionGroup = PermissionGroup::create([
-                'group_id' => $group->id,
-                'name' => $validated['group_name'],
-            ]);
+                // If $perm is a string (name), find the permission by name
+                if (is_string($perm)) {
+                    $permission = Permission::where('name', $perm)->first();
+                }
 
-            // 4. Assign permission ke PermissionGroup
-            foreach ($validated['permissions'] as $permName) {
-                $permission = Permission::where('name', $permName)->first();
-                $permission->update(['permission_group_id' => $permissionGroup->id]);
+                // If $perm is an integer (ID), find the permission by ID
+                if (is_numeric($perm)) {
+                    $permission = Permission::find($perm);
+                }
+
+                // If permission is found, associate it with the group
+                if ($permission) {
+                    PermissionGroup::create([
+                        'group_id' => $group->id,
+                        'permission_id' => $permission->id, // Associate permission ID
+                    ]);
+                }
             }
         });
 
+        // Redirect with success message
         return redirect()->route('roles.index')->with('success', 'Permission group created.');
     }
+
+
+
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'group_name' => 'required|min:3|max:255|unique:groups,name',
+    //         'permissions' => 'required|array|min:1',
+    //         'permissions.*' => 'required|string',
+    //     ]);
+
+    //     DB::transaction(function () use ($validated) {
+    //         // 1. Buat Group utama
+    //         $group = Group::create(['name' => $validated['group_name']]);
+
+    //         // 3. Buat PermissionGroup untuk setiap permission dan hubungkan ke Group
+    //         // $permissionGroup = PermissionGroup::create([
+    //         //     'group_id' => $group->id,
+    //         //     'name' => $validated['group_name'],
+    //         // ]);
+
+    //         // 4. Assign permission ke PermissionGroup
+
+    //         foreach ($validated['permissions'] as $permId) {
+    //             $permissionGroup = PermissionGroup::create([
+    //                 'group_id' => $group->id,
+    //                 'permission_id' => $permId,
+    //             ]);
+    //         }
+
+    //         foreach ($validated['permissions'] as $permName) {
+    //             $permission = Permission::where('name', $permName)->first();
+    //             $permission->update(['permission_group_id' => $permissionGroup->id]);
+    //         }
+    //     });
+
+    //     return redirect()->route('roles.index')->with('success', 'Permission group created.');
+    // }
 
 
     public function destroy($id)

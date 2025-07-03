@@ -26,7 +26,7 @@ export default function Create() {
   const handleStoreData = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    post(route('permissions.store'), {
+    post(route('roles.store'), {
       onSuccess: () => {
         Swal.fire({
           title: 'Success!',

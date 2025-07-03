@@ -1,4 +1,4 @@
-import React , { useState } from 'react';
+import React from 'react';
 import Container from '@/components/container';
 import Table from '@/components/table';
 import Button from '@/components/button';
@@ -17,25 +17,6 @@ import Swal from 'sweetalert2';
 export default function Index() {
   const { auth, groups, filters } = usePage().props;
   const user = auth?.user;
-  const [perPage, setPerPage] = useState(10);
-  const handlePerPageChange = (event) => {
-    setPerPage(event.target.value);
-    router.visit(route('roles.index'), { 
-      method: 'get', 
-      preserveState: true, 
-      data: { ...filters, perPage: event.target.value }
-    });
-  };
-
-    const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const handleSearchChange = (event) => {
-    const searchQuery = event.target.value;
-    router.visit(route('roles.index'), {
-      method: 'get',
-      preserveState: true,
-      data: { ...filters, search: searchQuery }
-    });
-  };
 
   const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -51,9 +32,6 @@ export default function Index() {
     roles: group.group?.roles || [],
   }));
 
-
-
-
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`Permission ${user ? user.name : 'User'}`} />
@@ -61,7 +39,7 @@ export default function Index() {
         <div className="grid auto-rows-min gap-4 md:grid-cols-1">
           <Card>
             <CardHeader>
-              <CardTitle>Roles Page</CardTitle>
+              <CardTitle>Selamat Datang {user?.name || 'User'}</CardTitle>
             </CardHeader>
           </Card>
         </div>
@@ -71,37 +49,12 @@ export default function Index() {
             <div className="mb-4 flex items-center justify-between gap-4">
               <Button type={'add'} url={route('roles.create')} />
               <div className="w-full md:w-4/6">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
-                  onKeyDown={handleSearchChange} // Trigger search on Enter key press
-                  placeholder="Search permissions by name..."
-                  className="w-full p-2 border rounded-md"
+                <Search
+                  url={route('roles.index')}
+                  placeholder={'Search permissions by name...'}
+                  filter={filters}
                 />
               </div>
-
-              <Button 
-                onClick={handleSearchChange} // Trigger search on button click
-                className="ml-4"
-              >
-                Search
-              </Button>
-              
-                <div>
-                  <label>Per Page:</label>
-                  <select
-                    className="ml-2 p-2 border rounded-md"
-                    value={perPage}
-                    onChange={handlePerPageChange}
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
-
             </div>
 
             <Table.Card title="Permission Group List">
