@@ -12,7 +12,7 @@ class PermissionGroupController extends Controller implements HasMiddleware
     public static function middleware()
     {
         return [
-            new Middleware('permission:permissions-index', only: ['index']),
+            new Middleware('permission:permissions-data', only: ['index']),
             new Middleware('permission:permissions-create', only: ['create', 'store']),
             new Middleware('permission:permissions-edit', only: ['edit', 'update']),
             new Middleware('permission:permissions-delete', only: ['destroy']),

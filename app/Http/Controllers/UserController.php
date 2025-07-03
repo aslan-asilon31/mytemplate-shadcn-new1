@@ -8,17 +8,18 @@ use App\Models\PermissionGroup;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Inertia\Inertia;
-use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class UserController extends Controller implements HasMiddleware
+
+class UserController extends Controller
 {
-    public static function middleware()
+    public function __construct()
     {
         return [
-            // new Middleware('permission:users index', only: ['index']),
-            // new Middleware('permission:users create', only: ['create', 'store']),
-            // new Middleware('permission:users edit', only: ['edit', 'update']),
-            // new Middleware('permission:users delete', only: ['destroy']),
+            new middleware('permission:users-data', only: ['index']),
+            new middleware('permission:users-create', only: ['create', 'store']),
+            new middleware('permission:users-edit', only: ['edit', 'update']),
+            new middleware('permission:users-delete', only: ['destroy']),
         ];
     }
 

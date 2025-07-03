@@ -9,6 +9,8 @@ import Search from '@/components/search';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import Swal from 'sweetalert2';
+import useHasAnyPermission from '@/utils/permission';
+
 
 export default function Index() {
   const { users, filters, auth } = usePage().props;
@@ -52,6 +54,7 @@ export default function Index() {
                       <Table.Td>{user.roles[0]?.name ?? '-'}</Table.Td>
                         <Table.Td className="relative">
                           <div className="relative inline-block text-left">
+                            
                             <button
                               type="button"
                               className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -61,6 +64,7 @@ export default function Index() {
                                   ?.classList.toggle('hidden')
                               }
                             >
+                            
                               Aksi
                               <svg
                                 className="-mr-1 ml-2 h-5 w-5"
@@ -76,13 +80,14 @@ export default function Index() {
                                 />
                               </svg>
                             </button>
-
+                            
                             <div
                               id={`dropdown-${user.id}`}
                               className="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
                             >
                               <div className="py-1 text-sm text-gray-700">
                                 {/* Tombol Edit */}
+                                {useHasAnyPermission(['users-edit']) &&
                                 <button
                                   onClick={() =>
                                     router.visit(route('users.edit', { id: user.id }))
@@ -90,9 +95,9 @@ export default function Index() {
                                   className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                                 >
                                   Edit
-                                </button>
+                                </button> }
 
-                                {/* Tombol Delete */}
+                                {useHasAnyPermission(['users-delete']) &&
                                 <button
                                   onClick={() => {
                                     Swal.fire({
@@ -129,6 +134,7 @@ export default function Index() {
                                 >
                                   Delete
                                 </button>
+                                  }
                               </div>
 
                             </div>

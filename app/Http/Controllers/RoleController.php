@@ -8,9 +8,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Routing\Controllers\Middleware;
 
 class RoleController extends Controller
 {
+
+    public function __construct()
+    {
+        return [
+            new middleware('role:users-data', only: ['index']),
+            new middleware('role:users-create', only: ['create', 'store']),
+            new middleware('role:users-edit', only: ['edit', 'update']),
+            new middleware('role:users-delete', only: ['destroy']),
+        ];
+    }
 
     public function index(Request $request)
     {
@@ -38,27 +49,6 @@ class RoleController extends Controller
     }
 
 
-    // public function index(Request $request)
-    // {
-    //     $permissions = Permission::when($request->search, function ($q) use ($request) {
-    //         $q->where('name', 'like', '%' . $request->search . '%');
-    //     })->pluck('id');
-
-    //     $groupIds = \App\Models\PermissionGroup::when($permissions->isNotEmpty(), function ($q) use ($permissions) {
-    //         $q->whereIn('permission_id', $permissions);
-    //     })->pluck('group_id')->unique();
-
-    //     $groups = Group::whereIn('id', $groupIds)
-    //         ->with(['permissions', 'roles'])
-    //         ->orderBy('name')
-    //         ->paginate(10)
-    //         ->withQueryString();
-
-    //     return inertia('roles/index', [
-    //         'groups' => $groups,
-    //         'filters' => $request->only(['search']),
-    //     ]);
-    // }
 
     public function create()
     {

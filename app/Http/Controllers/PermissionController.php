@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Inertia\Inertia;
+use Illuminate\Routing\Controller;
 
 class PermissionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:permissions-data')->only(['index']);
+        $this->middleware('permission:permissions-create')->only(['create', 'store']);
+        $this->middleware('permission:permissions-edit')->only(['edit', 'update']);
+        $this->middleware('permission:permissions-delete')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         $permissions = Permission::query()
