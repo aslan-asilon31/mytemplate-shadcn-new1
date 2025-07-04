@@ -18,7 +18,11 @@ export default function Create() {
   };
 
   return (
-    <div>
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Create Permission Group" />
+      <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+        <Card>
+          <Container>
       <h1>Create Arsip</h1>
       <form onSubmit={handleSubmit}>
         <div>
@@ -50,6 +54,8 @@ export default function Create() {
         </div>
         <Button type="submit">Create</Button>
       </form>
-    </div>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }

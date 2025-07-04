@@ -26,8 +26,11 @@ trait HasGroupPermissions
     {
         $permissionIds = $this->permissions->pluck('id');
 
-        return PermissionGroup::whereHas('permissions', function ($q) use ($permissionIds) {
-            $q->whereIn('id', $permissionIds);
-        })->pluck('name');
+        // return PermissionGroup::whereHas('permissions', function ($q) use ($permissionIds) {
+        //     $q->whereIn('id', $permissionIds);
+        // })->pluck('name');
+        
+        return PermissionGroup::whereRelation('permissions', 'id', $permissionIds)->pluck('name');
+
     }
 }

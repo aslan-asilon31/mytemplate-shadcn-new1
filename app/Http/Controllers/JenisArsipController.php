@@ -47,7 +47,7 @@ class JenisArsipController extends Controller
 
         Arsip::create($validated);
 
-        return redirect()->route('arsip.index')->with('success', 'Arsip created successfully.');
+        return redirect()->route('jenis-arsip.index')->with('success', 'Arsip created successfully.');
     }
 
     // Show the form for editing the specified arsip

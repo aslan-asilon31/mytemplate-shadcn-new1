@@ -103,18 +103,38 @@ class UserController extends Controller
             ->pluck('id')
             ->unique();
 
-        // Ambil group (App\Models\Group) yang memiliki relasi dengan role yang dimiliki user
-        $rolePermissionGroups = Group::whereHas('roles', function ($query) use ($user) {
-            $query->whereIn('roles.id', $user->roles->pluck('id'));
-        })->pluck('name');
+            $rolePermissionGroups = Group::whereRelation('roles', 'id', $user->roles->pluck('id'))->pluck('name');
+
+        // $rolePermissionGroups = Group::whereHas('roles', function ($query) use ($user) {
+        //     $query->whereIn('roles.id', $user->roles->pluck('id'));
+        // })->pluck('name');
 
         // Ambil PermissionGroup yang ada dalam group tersebut, dan filter permission-nya sesuai dengan permission yang dimiliki role
+        // $groupedPermissions = Group::with(['permissions' => function ($q) use ($rolePermissions) {
+        //     $q->whereIn('permissions.id', $rolePermissions);
+        // }])
+        //     ->whereHas('permissions', function ($q) use ($rolePermissions) {
+        //         $q->whereIn('permissions.id', $rolePermissions);
+        //     })
+        //     ->get()
+        //     ->map(function ($group) use ($user) {
+        //         return [
+        //             'groupId' => $group->id,
+        //             'groupName' => $group->name,
+        //             'permissions' => $group->permissions->map(function ($permission) use ($user) {
+        //                 return [
+        //                     'id' => $permission->id,
+        //                     'name' => $permission->name,
+        //                     'checked' => $user->permissions->contains('id', $permission->id),
+        //                 ];
+        //             })->values(),
+        //         ];
+        //     });
+
         $groupedPermissions = Group::with(['permissions' => function ($q) use ($rolePermissions) {
-            $q->whereIn('permissions.id', $rolePermissions);
-        }])
-            ->whereHas('permissions', function ($q) use ($rolePermissions) {
-                $q->whereIn('permissions.id', $rolePermissions);
-            })
+            $q->whereIn('id', $rolePermissions); 
+            }])
+            ->whereRelation('permissions', 'id', $rolePermissions) 
             ->get()
             ->map(function ($group) use ($user) {
                 return [
@@ -128,7 +148,8 @@ class UserController extends Controller
                         ];
                     })->values(),
                 ];
-            });
+        });
+
 
         return inertia('users/edit', [
             'user' => $user,
