@@ -22,25 +22,43 @@ class UserController extends Controller
             new middleware('permission:users-delete', only: ['destroy']),
         ];
     }
-
     public function index(Request $request)
     {
         $userPermissions = \Illuminate\Support\Facades\Auth::user()->getAllPermissions()->pluck('name')->toArray();
+
         $users = User::with('roles')
-            ->when(
-                $request->search,
-                fn($query) =>
-                $query->where('name', 'like', '%' . $request->search . '%')
-            )
+            ->when($request->id, fn($query) => $query->where('id', $request->id))
+            ->when($request->name, fn($query) => $query->where('name', 'like', '%' . $request->name . '%'))
+            ->when($request->email, fn($query) => $query->where('email', 'like', '%' . $request->email . '%'))
             ->latest()
             ->paginate(6);
 
         return inertia('users/index', [
             'userPermissions' => $userPermissions,
             'users' => $users,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['id', 'name', 'email']),
         ]);
     }
+
+
+    // public function index_old(Request $request)
+    // {
+    //     $userPermissions = \Illuminate\Support\Facades\Auth::user()->getAllPermissions()->pluck('name')->toArray();
+    //     $users = User::with('roles')
+    //         ->when(
+    //             $request->search,
+    //             fn($query) =>
+    //             $query->where('name', 'like', '%' . $request->search . '%')
+    //         )
+    //         ->latest()
+    //         ->paginate(6);
+
+    //     return inertia('users/index', [
+    //         'userPermissions' => $userPermissions,
+    //         'users' => $users,
+    //         'filters' => $request->only(['search']),
+    //     ]);
+    // }
 
     public function create()
     {

@@ -19,7 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // })->name('dashboard');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-   Route::prefix('dashboard')->group(function () {
+    Route::prefix('dashboard')->group(function () {
 
         // Roles Routes
         Route::get('/roles/group/{id}/edit', [RoleController::class, 'edit'])->name('roles.edit.byGroup');
@@ -38,9 +38,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('users', UserController::class);
     });
 
+    Route::prefix('master')->group(function () {
+        Route::resource('jenis-arsip', \App\Http\Controllers\JenisArsipController::class);
+        Route::resource('ip-address', \App\Http\Controllers\IpAddressController::class);
+        Route::resource('identitas-univ', \App\Http\Controllers\IdentitasUnivController::class);
+    });
+
     Route::resource('/comments', CommentController::class);
-
-
 });
 
 require __DIR__ . '/settings.php';

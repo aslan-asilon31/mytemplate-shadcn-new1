@@ -1,6 +1,5 @@
 // resources/js/Pages/users/index.tsx
-
-import React from 'react';
+import React, { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import Container from '@/components/container';
 import Table from '@/components/table';
@@ -10,11 +9,26 @@ import AppLayout from '@/layouts/app-layout';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import Swal from 'sweetalert2';
 import useHasAnyPermission from '@/utils/permission';
-
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 export default function Index() {
   const { users, filters, auth } = usePage().props;
   const user = auth?.user;
+const [advancedSearch, setAdvancedSearch] = useState({ id: '', name: '', email: '' });
+
+  const handleSearch = () => {
+    const params = {
+      ...advancedSearch,
+    };
+    router.get(route('users.index'), params, { preserveState: true, replace: true });
+  };
 
   return (
     <AppLayout breadcrumbs={[{ title: 'Users', href: '/users' }]}> 
@@ -28,10 +42,43 @@ export default function Index() {
         <Card>
           <Container>
             <div className='mb-4 flex items-center justify-between gap-4'>
+              <Sheet>
+                  
               <Button type={'add'} url={route('users.create')} />
+              <SheetTrigger>Advanced Search</SheetTrigger>
+
               <div className='w-full md:w-4/6'>
                 <Search url={route('users.index')} placeholder={'Search users...'} filter={filters} />
               </div>
+                <SheetContent>
+                  <SheetHeader>
+                  <div className="p-4">
+                        <input
+                          type="text"
+                          placeholder="ID"
+                          className="input"
+                          value={advancedSearch.id}
+                          onChange={(e) => setAdvancedSearch({ ...advancedSearch, id: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Name"
+                          className="input mt-2"
+                          value={advancedSearch.name}
+                          onChange={(e) => setAdvancedSearch({ ...advancedSearch, name: e.target.value })}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Email"
+                          className="input mt-2"
+                          value={advancedSearch.email}
+                          onChange={(e) => setAdvancedSearch({ ...advancedSearch, email: e.target.value })}
+                        />
+                        <button type="button" onClick={handleSearch} className="mt-2 bg-amber-700">Search</button>
+                    </div>
+                  </SheetHeader>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <Table.Card title={`User List`}>
